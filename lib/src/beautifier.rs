@@ -341,7 +341,7 @@ fn format_plain_xact(state: &mut State, node: Node) -> Result<()> {
         .named_children(&mut cursor)
         .filter(|c| types_first_line.contains(&c.kind()))
     {
-        let value = child.utf8_text(state.code)?;
+        let value = child.utf8_text(state.code)?.trim();
         match child.kind() {
             "date" => {
                 state.print(value);
