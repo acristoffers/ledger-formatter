@@ -8,6 +8,7 @@ use std::cmp::max;
 use super::args::Arguments;
 use anyhow::{anyhow, Context, Result};
 use tree_sitter::Node;
+use unicode_segmentation::UnicodeSegmentation;
 
 struct State<'a> {
     formatted: String,
@@ -18,6 +19,7 @@ struct State<'a> {
     level: usize,
     extra_indentation: usize,
     num_spaces: usize,
+    consecutive_ln_count: usize,
 }
 
 impl State<'_> {
@@ -36,7 +38,8 @@ impl State<'_> {
         } else {
             print!("{}", string);
         }
-        self.col += string.len();
+        self.consecutive_ln_count = 0;
+        self.col += string.graphemes(true).count();
     }
 
     fn print_node(&mut self, node: Node) -> Result<()> {
@@ -51,8 +54,15 @@ impl State<'_> {
         } else {
             println!("{}", string);
         }
+        self.consecutive_ln_count += 1;
         self.col = 0;
         self.row += 1;
+    }
+
+    fn ln(&mut self) {
+        if self.consecutive_ln_count < 2 {
+            self.println("");
+        }
     }
 }
 
@@ -99,10 +109,10 @@ pub fn beautify(code: &str, arguments: &mut Arguments) -> Result<String> {
         extra_indentation: 0,
         formatted: String::with_capacity(code.len() * 2),
         num_spaces: 2,
+        consecutive_ln_count: 0,
     };
 
     format_document(&mut state, root)?;
-    state.println("");
     Ok(state.formatted)
 }
 
@@ -123,10 +133,8 @@ fn format_document(state: &mut State, node: Node) -> Result<()> {
     let children: Vec<Node> = node.children(&mut cursor).collect();
     let mut added_newline = false;
     for child in children {
-        if child.kind() == "\n" {
-            if !added_newline {
-                state.println("");
-            }
+        if child.kind() == "\n" && !added_newline {
+            state.ln();
             added_newline = true;
         } else {
             added_newline = false;
@@ -143,7 +151,6 @@ fn format_journal_item(state: &mut State, node: Node) -> Result<()> {
         "block_test" => state.print_node(node),
         "directive" => format_directive(state, node),
         "xact" => format_xact(state, node),
-        // _ => state.print_node(node),
         _ => Ok(()),
     }
 }
@@ -325,6 +332,7 @@ fn format_format_subdirective(state: &mut State, node: Node) -> Result<()> {
 
 fn format_xact(state: &mut State, node: Node) -> Result<()> {
     let child = node.child(0).err_at_loc(&node)?;
+    state.ln();
     match child.kind() {
         "plain_xact" => format_plain_xact(state, child)?,
         "periodic_xact" => format_periodic_xact(state, child)?,

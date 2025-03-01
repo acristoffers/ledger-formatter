@@ -37,7 +37,7 @@
           default = ledger-beautifier;
         };
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ rustc cargo busybox clang-tools fzf ];
+          nativeBuildInputs = with pkgs; [ rustc cargo busybox clang-tools fzf gdb ];
           inherit buildInputs;
         };
       }
