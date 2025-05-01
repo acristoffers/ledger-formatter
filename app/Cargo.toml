@@ -5,15 +5,15 @@ edition = "2021"
 
 [dependencies]
 ledger_beautifier = { path = "../lib" }
-anyhow = "1.0.96"
+anyhow = "1.0.98"
 chardetng = "0.1.17"
-clap = { version = "4.5.31", features = ["derive", "env"] }
+clap = { version = "4.5.37", features = ["derive", "env"] }
 colored = "3.0.0"
 encoding_rs = "0.8.35"
 
 [build-dependencies]
-clap = { version = "4.5.31", features = ["derive", "env"] }
-clap_complete = "4.5.46"
+clap = { version = "4.5.37", features = ["derive", "env"] }
+clap_complete = "4.5.48"
 clap_mangen = "0.2.26"
 fs_extra = "1.3.0"
 
