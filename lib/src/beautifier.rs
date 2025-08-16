@@ -130,15 +130,24 @@ fn find_first_error_node(node: tree_sitter::Node) -> Option<tree_sitter::Node> {
 
 fn format_document(state: &mut State, node: Node) -> Result<()> {
     let mut cursor = node.walk();
-    let children: Vec<Node> = node.children(&mut cursor).collect();
+    let mut children: Vec<Node> = node.children(&mut cursor).collect();
+    children.sort_by_key(|x| {
+        if x.kind() == "\n" || x.child(0).unwrap().kind() != "xact" {
+            (0, "")
+        } else {
+            let date_node = x.child(0).unwrap().child(0).unwrap();
+            let date_text = date_node.utf8_text(state.code).unwrap();
+            (1, date_text)
+        }
+    });
     let mut added_newline = false;
     for child in children {
         if child.kind() == "\n" && !added_newline {
             state.ln();
             added_newline = true;
-        } else {
+        } else if child.kind() == "journal_item" {
             added_newline = false;
-            format_journal_item(state, child.child(0).err_at_loc(&node)?)?;
+            format_journal_item(state, child.child(0).err_at_loc(&child)?)?;
         }
     }
     Ok(())
